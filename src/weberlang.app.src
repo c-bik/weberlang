@@ -1,0 +1,12 @@
+{application, weberlang,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { weberlang, []}},
+  {env, []}
+ ]}.
