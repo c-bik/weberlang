@@ -38,7 +38,7 @@ start(_StartType, _StartArgs) ->
                {"/[...]", cowboy_static, {dir, ?PRIVDIR}}]}
     ]),
     Ip = {0,0,0,0},
-    Port = 8081,
+    Port = 8080,
     io:format(user,
               "~nHTML ~s~n"
               "URL http://~s:~p~n",
