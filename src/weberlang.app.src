@@ -1,11 +1,17 @@
+%%-*- erlang -*-
+
 {application, weberlang,
  [
-  {description, "A web interface to erlang console"},
+  {description, "Web erlang console"},
   {vsn, "0.0.1"},
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  %sasl,
+                  ranch,
+                  cowlib,
+                  cowboy
                  ]},
   {mod, { weberlang, []}},
   {env, []}
