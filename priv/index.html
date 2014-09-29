@@ -34,16 +34,21 @@
 </head>
 <body>
     <div data-role="page">
-        <div data-role="popup" id="startVm">
-            <form action="form.php" method="post" data-mini="true">
-            Start VM
-            <label for="node">Node</label>
-            <input type="text" name="node" id="node" data-mini="true" />
-            <label for="Cookie">Cookie</label>
-            <input type="text" name="cookie" id="cookie" data-mini="true" />
-            <input type="submit" value="Start" />
-            </form>
+        <div data-role="popup" id="popupStartVm" data-theme="a">
+            <div data-role="popup" id="startVm" data-theme="a" class="ui-corner-all">
+                <form>
+                    <div style="padding:10px 20px;">
+                        <h3>Start VM</h3>
+                        <label for="node" class="ui-hidden-accessible">Node:</label>
+                        <input type="text" name="node" id="node" value="" placeholder="nodename" data-theme="a">
+                        <label for="cookie" class="ui-hidden-accessible">Cookie:</label>
+                        <input type="password" name="cookie" id="cookie" value="" placeholder="cookie" data-theme="a">
+                        <button type="submit" data-theme="b" data-icon="check">Start</button>
+                    </div>
+                </form>
+            </div>
         </div>
+
         <div data-role="popup" id="settings">
             <p>Settings</p>
         </div>
