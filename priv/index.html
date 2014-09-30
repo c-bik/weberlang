@@ -36,16 +36,18 @@
     <div data-role="page">
         <div data-role="popup" id="popupStartVm" data-theme="a">
             <div data-role="popup" id="startVm" data-theme="a" class="ui-corner-all">
-                <form>
-                    <div style="padding:10px 20px;">
-                        <h3>Start VM</h3>
-                        <label for="node" class="ui-hidden-accessible">Node:</label>
-                        <input type="text" name="node" id="node" value="" placeholder="nodename" data-theme="a">
-                        <label for="cookie" class="ui-hidden-accessible">Cookie:</label>
-                        <input type="password" name="cookie" id="cookie" value="" placeholder="cookie" data-theme="a">
-                        <button type="submit" data-theme="b" data-icon="check">Start</button>
-                    </div>
-                </form>
+                <!-- form method='POST' action="rest/start_vm" -->
+                <div style="padding:10px 20px;">
+                    <h3>Start VM</h3>
+                    <label for="node" class="ui-hidden-accessible">Node:</label>
+                    <input type="text" name="node" id="node" value="" placeholder="nodename" data-theme="a">
+                    <label for="cookie" class="ui-hidden-accessible">Cookie:</label>
+                    <input type="password" name="cookie" id="cookie"
+                        value="" placeholder="cookie" data-theme="a">
+                    <button type="submit" data-theme="b" data-icon="check"
+                        onclick="startVm($('#node').val(), $('#cookie').val())">Start</button>
+                </div>
+                <!-- /form -->
             </div>
         </div>
 

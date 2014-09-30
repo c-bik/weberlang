@@ -1,0 +1,2 @@
+-define(I(__F,__A), io:format(user, __F, __A)).
+-define(I(__F), ?I(__F, [])).

@@ -35,6 +35,8 @@ start() ->
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [{"/", ?MODULE, []},
+               {"/ws", ws_handler, []},
+               {"/rest/[...]", rest_handler, []},
                {"/[...]", cowboy_static, {dir, ?PRIVDIR}}]}
     ]),
     Ip = {0,0,0,0},
