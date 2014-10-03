@@ -1,4 +1,4 @@
--module(rest_handler).
+-module(ajax_handler).
 -behaviour(cowboy_loop_handler).
 
 -include("weberlang.hrl").
@@ -22,19 +22,48 @@ info(Resp, Req, State) ->
         ], Resp, Req),
     {loop, Req1, State, hibernate}.
 
+-define(ERR(__T),
+        #{<<"result">> => <<"error">>,
+          <<"message">> => err(__T)}).
+err(Term) when is_binary(Term) -> Term;
+err(Term) when is_list(Term) ->
+    list_to_binary(
+      case catch io_lib:format("~s", [Term]) of
+          {'EXIT', _} -> io_lib:format("~p", [Term]);
+          R -> R
+      end);
+err(Term) ->
+    list_to_binary(io_lib:format("~p", [Term])).
+
 cmd([Cmd], JsonStr) when is_binary(JsonStr) ->
     Req = self(),
     spawn(fun() ->
             Req ! jsxn:encode(cmd(Cmd, jsxn:decode(JsonStr)))
           end);
+cmd(<<"styles">>, #{<<"path">> := Path}) ->
+    try
+        [_|PartsInReverse] = lists:reverse(filename:split(binary_to_list(Path))),
+        StylePath = filename:join([?PRIVDIR | lists:reverse(PartsInReverse)]),
+        #{<<"result">> => <<"ok">>,
+          <<"styles">> => [list_to_binary(F) || F <- filelib:wildcard("*.css", StylePath)]}
+    catch
+        _:Error ->
+            ?ERR(Error)
+    end;
 cmd(<<"start_vm">>, #{<<"node">> := Node, <<"cookie">> := Cookie}) ->
-    Child = erl_vm:start(Node, Cookie),
-    ?I("Start VM: Node ~p, Cookie ~p, Child ~p~n", [Node, Cookie, Child]),
-    #{<<"result">> => <<"ok">>};
+    case erl_vm:start(Node, Cookie) of
+        {ok, VMControllerPid} ->
+            ?I("Start VM: Node ~p, Cookie ~p, Child ~p~n",
+               [Node, Cookie, VMControllerPid]),
+            #{<<"result">> => <<"ok">>,
+              <<"vm_controller">> =>
+                base64:encode(term_to_binary(VMControllerPid))};
+        {error, Reason} ->
+            ?ERR(Reason)
+    end;
 cmd(Cmd, Args) ->
     ?I("UNSUPPORTED Cmd ~p Args ~p~n", [Cmd, Args]),
-    #{<<"result">> => <<"error">>,
-      <<"message">> => list_to_binary(["Unsupported ", Cmd])}.
+    ?ERR(list_to_binary(["Unsupported ", Cmd])).
 
 display_req(Req) ->
     ?I("~n-------------------------------------------------------~n"),

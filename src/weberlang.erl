@@ -1,6 +1,7 @@
 -module(weberlang).
-
 -behaviour(application).
+
+-include("weberlang.hrl").
 
 %% Application callbacks
 -export([start/0, start/2, stop/1]).
@@ -16,13 +17,6 @@
 %% Application callbacks
 %% ===================================================================
 
--define(PRIVDIR,
-        (fun() ->
-                 case code:priv_dir(?MODULE) of
-                     {error, bad_name} -> "priv";
-                     PDir -> PDir
-                 end
-         end)()).
 
 start() ->
     %ok = application:start(sasl),
@@ -36,7 +30,7 @@ start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [{"/", ?MODULE, []},
                {"/ws", ws_handler, []},
-               {"/rest/[...]", rest_handler, []},
+               {"/rest/[...]", ajax_handler, []},
                {"/[...]", cowboy_static, {dir, ?PRIVDIR}}]}
     ]),
     Ip = {0,0,0,0},

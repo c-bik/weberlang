@@ -14,37 +14,35 @@
          format_status/2
         ]).
 
--record(s, {}).
-
-% via exports
--export([ register_name/2
-          , register_name/3
-          , unregister_name/1
-          , whereis_name/1
-          , send/2
-        ]).
+-record(s, {port = undefined, buf = [], buftmr = undefined}).
 
 start(Node, Cookie) ->
     supervisor:start_child(weberlang_sup,
-                           {{Node, Cookie},
+                           {Node,
                             {?MODULE, start_link,
                              [Node, Cookie]},
                             temporary, 5000, worker,
                             [?MODULE]}).
 
 start_link(Node, Cookie) ->
-    gen_server:start_link({via, ?MODULE, {Node, Cookie}},
-                          ?MODULE, [Node, Cookie], []).
+    gen_server:start_link(?MODULE, [Node, Cookie], []).
 
 init([Node, Cookie]) ->
-    %[_|Rest] = lists:reverse(filename:split(code:lib_dir())),
-    %ErtsBin = filename:join(lists:reverse(["bin"|Rest])),
-    %[Erl] = filelib:wildcard("erl{.exe,}", ErtsBin),
-    %ErlExe = filename:join(ErtsBin, Erl),
-    ErlExe = undefined,
+    [_|Rest] = lists:reverse(filename:split(code:lib_dir())),
+    ErtsBin = filename:join(lists:reverse(["bin"|Rest])),
+    [Erl] = filelib:wildcard("erl{.exe,}", ErtsBin),
+    ErlExe = filename:join(ErtsBin, Erl),
     ?I("Starting erlang VM at ~p, Node ~p, Cookie ~p~n",
        [ErlExe, Node, Cookie]),
-    {ok, #s{}}.
+    case catch open_port({spawn_executable, ErlExe},
+                         [{line, 1}, {args, ["-sname", Node,
+                                             "-setcookie", Cookie]},
+                          exit_status,stderr_to_stdout,
+                          {parallelism, true}]) of
+        Port when is_port(Port) -> {ok, #s{port = Port}};
+        {'EXIT', Reason} -> {stop, Reason};
+        Other -> {stop, Other}
+    end.
 
 handle_call(Request, From, State) ->
     {stop, {unsupported_call, Request, From},
@@ -55,6 +53,16 @@ handle_cast(Request, State) ->
     {stop, {unsupported_cast, Request},
      State}.
 
+handle_info(send_buf, #s{buf = Buf, buftmr = BufTmr} = State) ->
+    if BufTmr /= undefined -> erlang:cancel_timer(BufTmr); true -> ok end,
+    ?I("Got ~s~n", [Buf]),
+    {noreply, State#s{buf = [], buftmr = undefined}};
+handle_info({P,{data,{T,Str}}},
+            #s{port=P, buf = OldBuf, buftmr = BufTmr} = State) ->
+    if BufTmr /= undefined -> erlang:cancel_timer(BufTmr); true -> ok end,
+    NewBuf = OldBuf ++ Str ++ if T == eol -> "\n"; true -> "" end,
+    NewBufTimer = erlang:send_after(100, self(), send_buf),
+    {noreply, State#s{buf = NewBuf, buftmr = NewBufTimer}};
 handle_info(Info, State) ->
     {stop, {unsupported_info, Info},
      State}.
@@ -69,14 +77,3 @@ code_change(OldVsn, State, Extra) ->
 
 format_status(Opt, [PDict, State]) ->
     {Opt, [PDict, State]}.
-
-% VIA API
-register_name(Name, Pid) ->
-    ?I("Registering ~p with ~p~n", [Name, Pid]),
-    global:register_name(Name, Pid).
-register_name(Name, Pid, Resolve) ->
-    ?I("Registering ~p with ~p~n", [Name, Pid]),
-    global:register_name(Name, Pid, Resolve).
-unregister_name(Name) -> global:unregister_name(Name).
-whereis_name(Name) -> global:whereis_name(Name).
-send(Name, Msg) -> global:send(Name, Msg).

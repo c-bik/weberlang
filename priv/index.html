@@ -25,12 +25,20 @@
 	<meta name="msapplication-TileColor" content="#FFFFFF">
 	<meta name="msapplication-TileImage" content="fabs/favicon-144.png">
 	<meta name="msapplication-config" content="fabs/browserconfig.xml">
-	<!-- ****** faviconit.com favicons ****** -->
-    <link rel="stylesheet"
-          href="http://code.jquery.com/mobile/1.4.4/jquery.mobile-1.4.4.min.css" />
-    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-    <script src="http://code.jquery.com/mobile/1.4.4/jquery.mobile-1.4.4.min.js"></script>
+
+    <!-- jQuery/Mobile -->
+    <script src="lib/jquery/jquery-1.11.1.min.js"></script>
+    <link rel="stylesheet" href="lib/jquery.mobile/jquery.mobile-1.4.4.min.css" />
+    <script src="lib/jquery.mobile/jquery.mobile-1.4.4.min.js"></script>
     <script src="scripts/weberlang.js"></script>
+
+    <!-- SHJS -->
+    <script type="text/javascript" src="lib/syntax_highlight/sh_main.min.js">
+        </script>
+    <link id="lnk_sh_css" type="text/css" rel="stylesheet"
+          href="lib/syntax_highlight/css/sh_style.css">
+
+    <link type="text/css" rel="stylesheet" href="css/weberlang.css">
 </head>
 <body>
     <div data-role="page">
@@ -62,25 +70,17 @@
                 data-icon="power" data-iconpos="notext">2</a>
         </div><!-- /header -->
  
-        <div data-role="content">
-            <p>Hello world</p>
-            <ul data-role="listview" data-inset="true" data-filter="true">
-    <li><a href="#">Acura</a></li>
-    <li><a href="#">Audi</a></li>
-    <li><a href="#">BMW</a></li>
-    <li><a href="#">Cadillac</a></li>
-    <li><a href="#">Ferrari</a></li>
-</ul>
-<form>
-    <label for="slider-0">Input slider:</label>
-    <input type="range" name="slider" id="slider-0" value="25" min="0" max="100" />
-</form>
-<a href="#" data-role="button" data-icon="star">Star button</a>
-
+        <div data-role="content" class="fit-contento">
+            <pre id="vm_console" class="sh_erlang"> </pre>
         </div><!-- /content -->
  
-        <div data-role="footer">
-            <h4>My Footer</h4>
+        <div data-role="footer"  class="bottom-footer">
+                <select id="syntax_styles">
+                    <!-- option value="standard">Standard: 7 day</option>
+                    <option value="rush">Rush: 3 days</option>
+                    <option value="express">Express: next day</option>
+                    <option value="overnight">Overnight</option -->
+                </select>
         </div><!-- /footer -->
     </div><!-- /page -->
 </body>
