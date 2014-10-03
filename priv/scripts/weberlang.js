@@ -6,7 +6,7 @@ function init()
     if(!("WebSocket" in window)){  
         wsHost = false;  
     } else {
-        wsHost = "ws://" + window.location.host + "/ws";  
+        wsHost = "ws://" + window.location.host + "/ws/";
     };    
     updateStyleSheet('lnk_sh_css', 'sh_style.css');
     $('#syntax_styles').bind( "change", function(event, ui) {
@@ -14,11 +14,7 @@ function init()
     });    
     post('rest/styles', {path : $('#lnk_sh_css').attr("href")},
             function(response) {
-                if (response.result == "ok") {
-                    load_styles('lnk_sh_css', 'syntax_styles', response.styles);
-                } else {
-                    console.error(response.message);
-                }
+                load_styles('lnk_sh_css', 'syntax_styles', response.styles);
             }
         );
 
@@ -29,7 +25,6 @@ function init()
     "start() ->\n"+
     "    io:fwrite(\"Hello, world!\").");
 
-    connect();
 }
 
 var vm_console = '';
@@ -82,6 +77,7 @@ function startVm(Node, Cookie)
     post('rest/start_vm',
             {node: Node, cookie: Cookie},
             function(response) {
+                ws_connect(response.vm_controller);
             }
         );
 }
@@ -94,59 +90,45 @@ function post(url, data, callback)
     console.log("Callback " + callback);
     $.post(url, datastr,
             function(response) {
-                console.log("response " + JSON.stringify(response));
-                callback(response);
+                if (response.result == "ok") {
+                    callback(response);
+                } else {
+                    console.error("response " + response.message);
+                }
             },
             'json');
 }
 
 /// Websocket Interface
-function connect()
+function ws_connect(pid)
 {
-    websocket = new WebSocket(wsHost);
-    console.log('Connecting to: ' +  wsHost); 
-    websocket.onopen = function(evt) { onOpen(evt) }; 
-    websocket.onclose = function(evt) { onClose(evt) }; 
-    websocket.onmessage = function(evt) { onMessage(evt) }; 
-    websocket.onerror = function(evt) { onError(evt) }; 
-};  
-
-function disconnect() {
-    websocket.close();
-}; 
-
-function toggle_connection(){
-    if(websocket.readyState == websocket.OPEN){
-        disconnect();
-    } else {
-        connect();
-    };
+    wsHostWithPid = wsHost + '?pid=' + pid;
+    websocket = new WebSocket(wsHostWithPid);
+    console.log('Connecting to: ' +  wsHostWithPid);
+    websocket.onopen = function(evt) { wsOnOpen(evt) };
+    websocket.onclose = function(evt) { wsOnClose(evt) };
+    websocket.onmessage = function(evt) { wsOnMessage(evt) };
+    websocket.onerror = function(evt) { wsOnError(evt) };
 };
+function ws_disconnect() { websocket.close(); }; 
 
-function sendTxt(txt) {
+function ws_send(object) {
     if(websocket.readyState == websocket.OPEN){
+        var txt = JSON.stringify(object);
         websocket.send(txt);
-        console.log('sending: ' + txt); 
+        console.log('sending: ' + txt);
     } else {
-         console.log('websocket is not connected'); 
+        console.log('websocket is not connected, retrying after 1s');
+        setTimeout(function(){ send(object); }, 1000);
     };
 };
 
-function onOpen(evt) { 
-    console.log('CONNECTED'); 
-    sendTxt('hi');
-};  
+function wsOnOpen(evt) { console.log('CONNECTED'); };
+function wsOnClose(evt) { console.log('DISCONNECTED'); };
+function wsOnError(evt) { console.error(evt.data); };
 
-function onClose(evt) { 
-    console.log('DISCONNECTED');
-};  
-
-function onMessage(evt) { 
-    console.log('RESPONSE: ' + evt.data); 
-};  
-
-function onError(evt) {
-    console.log('ERROR: ' + evt.data);
+function wsOnMessage(evt) {
+    console.log('RESPONSE: ' + evt.data);
 };
 ///
 

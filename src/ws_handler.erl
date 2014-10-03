@@ -9,30 +9,35 @@
 -export([websocket_info/3]).
 -export([websocket_terminate/3]).
 
+-record(s, {erl_vm_pid = undfined}).
+
 -define(IW(__F, __A), ?I("[~p] "__F, [?LINE|__A])).
 init({tcp, http}, _Req, _Opts) ->
-    ?IW("init ~p~n~p~n", [_Req, _Opts]),
 	{upgrade, protocol, cowboy_websocket}.
 
-websocket_init(_TransportName, Req, _Opts) ->
-    ?IW("websocket_init ~p~n~p~n~p~n", [_TransportName, Req, _Opts]),
-	{ok, Req, undefined_state}.
+websocket_init(tcp, Req, _Opts) ->
+    {B64Pid, Req1} = cowboy_req:qs_val(<<"pid">>, Req),
+    VMControllerPid = ?b64topid(B64Pid),
+    ok = erl_vm:register_receiver(VMControllerPid, self()),
+	{ok, Req1, #s{erl_vm_pid = VMControllerPid}}.
 
-websocket_handle({text, Msg}, Req, State) ->
-    ?IW("websocket_handle ~p~n~p~n~p~n", [Msg, Req, State]),
-	{reply, {text, << "That's what she said! ", Msg/binary >>}, Req, State};
-websocket_handle(_Data, Req, State) ->
-    ?IW("websocket_handle ~p~n~p~n~p~n", [_Data, Req, State]),
-	{ok, Req, State}.
+% Data From Browser
+websocket_handle({text, Msg}, Req, S) ->
+    ?IW("websocket_handle ~p~n~p~n", [Msg, S]),
+	{reply, {text, << "That's what she said! ", Msg/binary >>}, Req, S};
+websocket_handle(_Data, Req, S) ->
+    ?IW("websocket_handle ~p~n~p~n", [_Data, S]),
+	{ok, Req, S}.
 
-websocket_info({timeout, _Ref, Msg}, Req, State) ->
-    ?IW("websocket_info ~p~n~p~n~p~n~p~n", [_Ref, Msg, Req, State]),
-	erlang:start_timer(1000, self(), <<"How' you doin'?">>),
-	{reply, {text, Msg}, Req, State};
-websocket_info(_Info, Req, State) ->
-    ?IW("websocket_info ~p~n~p~n~p~n", [_Info, Req, State]),
-	{ok, Req, State}.
+% Data To Browser
+websocket_info(Info, Req, S) when is_list(Info) ->
+    %?IW("websocket_info ~p~n~p~n", [Info, S]),
+	{reply, {text, jsxn:encode(#{<<"data">> => list_to_binary(Info)})},
+     Req, S};
+websocket_info(Info, Req, S) ->
+    ?IW("websocket_info ~p~n~p~n", [Info, S]),
+	{ok, Req, S}.
 
-websocket_terminate(_Reason, _Req, _State) ->
-    ?IW("websocket_terminate ~p~n~p~n~p~n", [_Reason, _Req, _State]),
+websocket_terminate(_Reason, _Req, S) ->
+    ?IW("websocket_terminate ~p~n~p~n", [_Reason, S]),
 	ok.

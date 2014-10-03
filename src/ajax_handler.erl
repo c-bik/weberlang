@@ -56,8 +56,7 @@ cmd(<<"start_vm">>, #{<<"node">> := Node, <<"cookie">> := Cookie}) ->
             ?I("Start VM: Node ~p, Cookie ~p, Child ~p~n",
                [Node, Cookie, VMControllerPid]),
             #{<<"result">> => <<"ok">>,
-              <<"vm_controller">> =>
-                base64:encode(term_to_binary(VMControllerPid))};
+              <<"vm_controller">> => ?pidtob64(VMControllerPid)};
         {error, Reason} ->
             ?ERR(Reason)
     end;

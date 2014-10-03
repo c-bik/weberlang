@@ -29,7 +29,7 @@ start() ->
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [{"/", ?MODULE, []},
-               {"/ws", ws_handler, []},
+               {"/ws/[...]", ws_handler, []},
                {"/rest/[...]", ajax_handler, []},
                {"/[...]", cowboy_static, {dir, ?PRIVDIR}}]}
     ]),

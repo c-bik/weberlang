@@ -8,3 +8,6 @@
                      PDir -> PDir
                  end
          end)()).
+
+-define(pidtob64(__P),  base64:encode(term_to_binary(__P))).
+-define(b64topid(__BP), binary_to_term(base64:decode(__BP))).

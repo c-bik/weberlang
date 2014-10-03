@@ -14,7 +14,13 @@
          format_status/2
         ]).
 
--record(s, {port = undefined, buf = [], buftmr = undefined}).
+-export([register_receiver/2]).
+
+-record(s, {port = undefined, buf = [],
+            buftmr = undefined, receiver = undefined}).
+
+register_receiver(Pid, ReceiverPid) ->
+    gen_server:call(Pid, {register, ReceiverPid}).
 
 start(Node, Cookie) ->
     supervisor:start_child(weberlang_sup,
@@ -44,6 +50,9 @@ init([Node, Cookie]) ->
         Other -> {stop, Other}
     end.
 
+handle_call({register, ReceiverPid}, _From, State) ->
+    ?I("Receiver ~p registered~n", [ReceiverPid]),
+    {reply, ok, State#s{receiver = ReceiverPid}};
 handle_call(Request, From, State) ->
     {stop, {unsupported_call, Request, From},
      {error, unsupported, Request, From},
@@ -53,10 +62,18 @@ handle_cast(Request, State) ->
     {stop, {unsupported_cast, Request},
      State}.
 
-handle_info(send_buf, #s{buf = Buf, buftmr = BufTmr} = State) ->
+handle_info(send_buf, #s{buftmr = BufTmr} = State) ->
     if BufTmr /= undefined -> erlang:cancel_timer(BufTmr); true -> ok end,
-    ?I("Got ~s~n", [Buf]),
-    {noreply, State#s{buf = [], buftmr = undefined}};
+    {noreply, State#s{
+                buf = if is_pid(State#s.receiver) ->
+                             State#s.receiver ! State#s.buf,
+                             [];
+                         true ->
+                             ?I("Got ~s~n", [State#s.buf]),
+                             State#s.buf
+                      end,
+                buftmr = undefined}
+    };
 handle_info({P,{data,{T,Str}}},
             #s{port=P, buf = OldBuf, buftmr = BufTmr} = State) ->
     if BufTmr /= undefined -> erlang:cancel_timer(BufTmr); true -> ok end,
