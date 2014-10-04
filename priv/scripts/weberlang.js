@@ -1,4 +1,5 @@
 var wsHost = false;
+var vmprompt = '';
 
 function init()
 {
@@ -18,26 +19,43 @@ function init()
             }
         );
 
-    // Only for testing
-    append_vm_output("-module(hello).\n"+
-    "-export([start/0]).\n"+
-    "\n"+
-    "start() ->\n"+
-    "    io:fwrite(\"Hello, world!\").");
-
+    $('#erl_input').keyup(function(event) {
+        if (event.keyCode == '13') {
+            event.preventDefault();
+            var inp = $('#erl_input').val().slice(vmprompt.length);
+            append_to_last_vm_output(vmprompt+inp+'\n');
+            ws_send(inp+'\n');
+        }
+    });
 }
 
-var vm_console = '';
-function append_vm_output(string)
+var lastvmstring = '';
+function vm_output(string)
 {
-    vm_console += string;
-    $("#vm_console").html(vm_console);
-    var element = $("#vm_console")[0];
+    lastvmstring = string;
+    var pre = $('<pre>')
+        .addClass('vm_blocks')
+        .addClass('sh_erlang')
+        .html(lastvmstring)
+        .appendTo("#vm_console");
+    syntax(pre);
+}
+
+function append_to_last_vm_output(string)
+{
+    lastvmstring += string;
+    var pre = $('#vm_console')
+        .children(':last')
+        .html(lastvmstring);
+    syntax(pre);
+}
+
+function syntax(pre) {
     if ('erlang' in sh_languages) {
-        sh_highlightElement(element, sh_languages['erlang']);
+        sh_highlightElement(pre[0], sh_languages['erlang']);
     }
     else {
-        sh_load('erlang', element, 'lib/syntax_highlight/lang/', '.min.js');
+        sh_load('erlang', pre[0], 'lib/syntax_highlight/lang/', '.min.js');
     }
 }
 
@@ -53,7 +71,8 @@ function load_styles(link_id, targetid, styles)
         else
             selected = '';
         var disp = styles[i].split('.')[0].split('_')[1];
-        $('<option value="'+styles[i]+'" '+selected+'>'+disp+'</option>').appendTo($target);
+        $('<option value="'+styles[i]+'" '+selected+'>'+disp+'</option>')
+            .appendTo($target);
     }
     $target.selectmenu('refresh');
 }
@@ -69,7 +88,27 @@ function updateStyleSheet(id, file)
         lnk_pp.splice(lnk_pp.length-1,1,file);
         lnk1 = lnk_pp.join('/');
         $lnk.attr("href",lnk1);
+
+        apply_style_to_input();
     }
+}
+
+// Apply syntax styles to input field
+function apply_style_to_input()
+{
+    setTimeout(function() {
+        var pre = $('#vm_console')
+        .children(':last')
+        .html(lastvmstring);
+        if(pre != undefined) {
+            $('#erl_input')
+                .css('background-color', pre.css('background-color'))
+                .css('color', pre.css('color'))
+                .css('font-style', pre.css('font-style'))
+                .css('font-weight', pre.css('font-weight'))
+                .css('font-family', pre.css('font-family'));
+        }
+    }, 100);
 }
 
 function startVm(Node, Cookie)
@@ -112,10 +151,11 @@ function ws_connect(pid)
 };
 function ws_disconnect() { websocket.close(); }; 
 
-function ws_send(object) {
+function ws_send(txt) {
     if(websocket.readyState == websocket.OPEN){
-        var txt = JSON.stringify(object);
         websocket.send(txt);
+        vmprompt = '';
+        $('#erl_input').val(vmprompt);
         console.log('sending: ' + txt);
     } else {
         console.log('websocket is not connected, retrying after 1s');
@@ -128,11 +168,36 @@ function wsOnClose(evt) { console.log('DISCONNECTED'); };
 function wsOnError(evt) { console.error(evt.data); };
 
 function wsOnMessage(evt) {
-    console.log('RESPONSE: ' + evt.data);
+    var datalines = evt.data
+        .split('\n');
+    vmprompt = datalines[datalines.length-1];
+    vm_output(
+            datalines.slice(0,datalines.length-1)
+            .join('\n')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;') + '\n');
+    $('#erl_input').val(vmprompt);
 };
 ///
+
+function ScaleContentToDevice(){
+    scroll(0, 0);
+    var content =
+        $.mobile.getScreenHeight()
+        - $(".ui-header").outerHeight()
+        - $(".ui-footer").outerHeight()
+        - $(".ui-content").outerHeight()
+        + $(".ui-content").height();
+    $(".ui-content").height(content);
+}
 
 $(document).ready(function()
 {
     init();
+    $(document).on('pagecontainershow', function() {
+        ScaleContentToDevice();
+        $(window).on('resize orientationchange', function() {
+            ScaleContentToDevice();
+        })
+    });
 });

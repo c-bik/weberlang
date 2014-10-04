@@ -14,13 +14,19 @@
          format_status/2
         ]).
 
--export([register_receiver/2]).
+-export([register_receiver/2,
+        send_to_vm/2]).
 
 -record(s, {port = undefined, buf = [],
             buftmr = undefined, receiver = undefined}).
 
-register_receiver(Pid, ReceiverPid) ->
+register_receiver(Pid, ReceiverPid) when is_pid(Pid) ->
     gen_server:call(Pid, {register, ReceiverPid}).
+
+send_to_vm(Pid, String) when is_binary(String) ->
+    send_to_vm(Pid, binary_to_list(String));
+send_to_vm(Pid, String) when is_pid(Pid) ->
+    gen_server:call(Pid, {string, String}).
 
 start(Node, Cookie) ->
     supervisor:start_child(weberlang_sup,
@@ -41,9 +47,11 @@ init([Node, Cookie]) ->
     ?I("Starting erlang VM at ~p, Node ~p, Cookie ~p~n",
        [ErlExe, Node, Cookie]),
     case catch open_port({spawn_executable, ErlExe},
-                         [{line, 1}, {args, ["-sname", Node,
-                                             "-setcookie", Cookie]},
-                          exit_status,stderr_to_stdout,
+                         [{line, 1},
+                          {args,
+                           ["-name", list_to_binary([Node,"@127.0.0.1"]),
+                            "-setcookie", Cookie]},
+                          exit_status, stderr_to_stdout,
                           {parallelism, true}]) of
         Port when is_port(Port) -> {ok, #s{port = Port}};
         {'EXIT', Reason} -> {stop, Reason};
@@ -53,6 +61,9 @@ init([Node, Cookie]) ->
 handle_call({register, ReceiverPid}, _From, State) ->
     ?I("Receiver ~p registered~n", [ReceiverPid]),
     {reply, ok, State#s{receiver = ReceiverPid}};
+handle_call({string, String}, _From, #s{port = Port} = State) ->
+    true = erlang:port_command(Port, String),
+    {reply, ok, State};
 handle_call(Request, From, State) ->
     {stop, {unsupported_call, Request, From},
      {error, unsupported, Request, From},

@@ -48,7 +48,8 @@
                 <div style="padding:10px 20px;">
                     <h3>Start VM</h3>
                     <label for="node" class="ui-hidden-accessible">Node:</label>
-                    <input type="text" name="node" id="node" value="" placeholder="nodename" data-theme="a">
+                    <input type="text" name="node" id="node" value=""
+                           placeholder="nodename" data-theme="a">
                     <label for="cookie" class="ui-hidden-accessible">Cookie:</label>
                     <input type="password" name="cookie" id="cookie"
                         value="" placeholder="cookie" data-theme="a">
@@ -62,7 +63,7 @@
         <div data-role="popup" id="settings">
             <p>Settings</p>
         </div>
-        <div data-role="header">
+        <div data-role="header" data-position="fixed">
             <a href="#settings" data-rel="popup" data-role="button"
                 data-icon="gear" data-iconpos="notext">1</a>
             <h1>Web Erlang</h1>
@@ -70,17 +71,13 @@
                 data-icon="power" data-iconpos="notext">2</a>
         </div><!-- /header -->
  
-        <div data-role="content" class="fit-contento">
-            <pre id="vm_console" class="sh_erlang"> </pre>
+        <div data-role="content">
+            <div id="vm_console" class="vm_console"></div>
+            <input id="erl_input" type="text" data-role="none">
         </div><!-- /content -->
  
-        <div data-role="footer"  class="bottom-footer">
-                <select id="syntax_styles">
-                    <!-- option value="standard">Standard: 7 day</option>
-                    <option value="rush">Rush: 3 days</option>
-                    <option value="express">Express: next day</option>
-                    <option value="overnight">Overnight</option -->
-                </select>
+        <div data-role="footer" data-position="fixed">
+            <select id="syntax_styles" data-mini="true"> </select>
         </div><!-- /footer -->
     </div><!-- /page -->
 </body>

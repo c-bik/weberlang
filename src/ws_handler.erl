@@ -21,18 +21,19 @@ websocket_init(tcp, Req, _Opts) ->
     ok = erl_vm:register_receiver(VMControllerPid, self()),
 	{ok, Req1, #s{erl_vm_pid = VMControllerPid}}.
 
-% Data From Browser
+% Data From Browser (binary string)
 websocket_handle({text, Msg}, Req, S) ->
-    ?IW("websocket_handle ~p~n~p~n", [Msg, S]),
-	{reply, {text, << "That's what she said! ", Msg/binary >>}, Req, S};
+    ok = erl_vm:send_to_vm(S#s.erl_vm_pid, Msg),
+    %?IW("websocket_handle ~p~n", [Msg]),
+    {ok, Req, S};
 websocket_handle(_Data, Req, S) ->
     ?IW("websocket_handle ~p~n~p~n", [_Data, S]),
 	{ok, Req, S}.
 
-% Data To Browser
+% Data To Browser (binary string)
 websocket_info(Info, Req, S) when is_list(Info) ->
-    %?IW("websocket_info ~p~n~p~n", [Info, S]),
-	{reply, {text, jsxn:encode(#{<<"data">> => list_to_binary(Info)})},
+    ?IW("websocket_info ~p~n", [Info]),
+	{reply, {text, list_to_binary(Info)},
      Req, S};
 websocket_info(Info, Req, S) ->
     ?IW("websocket_info ~p~n~p~n", [Info, S]),

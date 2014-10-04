@@ -1,19 +1,22 @@
-.fit-content, .bottom-footer {
-    position : absolute;
+.ui-page .ui-header {
+    padding: 0 !important;
 }
-		
-.fit-content {
-    top : 44px;
-    bottom : 44px;
-	left : 0;
-	right : 0;
+.ui-page .ui-footer {
+    padding: 0 !important;
 }
 
-.fit-content > div {
-	height : 100%;
+.vm_console {
+    background-color: lightblue;
+    padding: 0 !important;
 }
 
-.bottom-footer {
-    bottom : 0;
-	width : 100%;
+.vm_blocks {
+    margin: 0px;
+}
+
+#erl_input {
+    width : 100% !important;
+    border : none !important;
+    padding : 0px !important;
+    margin: 0px !important;
 }
