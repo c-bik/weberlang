@@ -8,6 +8,7 @@
   {applications, [
                   kernel,
                   stdlib,
+                  lager,
                   ranch,
                   cowlib,
                   cowboy

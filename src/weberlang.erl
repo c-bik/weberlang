@@ -24,6 +24,7 @@ start() ->
     ok = application:start(ranch),
     ok = application:start(cowlib),
     ok = application:start(cowboy),
+    lager:start(),
     ok = application:start(?MODULE).
 
 start(_StartType, _StartArgs) ->
@@ -35,18 +36,21 @@ start(_StartType, _StartArgs) ->
     ]),
     Ip = {0,0,0,0},
     Port = 8080,
-    io:format(user,
-              "~nHTML ~s~n"
-              "URL http://~s:~p~n",
-              [filename:absname(?PRIVDIR),
-               inet:ntoa(Ip),
-               Port]),
-    cowboy:start_http(my_http_listener, 100,
-                      [{ip, Ip}, {port, Port}],
-                      [{env, [{dispatch, Dispatch}]}]),
+    case cowboy:start_http(my_http_listener, 100,
+                           [{ip, Ip}, {port, Port}],
+                           [{env, [{dispatch, Dispatch}]}]) of
+        {ok, _} ->
+            lager:info("starting ~p priv ~s url http://~s:~p",
+                       [?MODULE, filename:absname(?PRIVDIR),
+                        inet:ntoa(Ip), Port]);
+        {error, Error} ->
+            lager:error("error starting ~p priv ~s url http://~s:~p reason ~p",
+                        [?MODULE, filename:absname(?PRIVDIR), inet:ntoa(Ip), Port, Error])
+    end,
     weberlang_sup:start_link().
 
 stop(_State) ->
+    lager:info("stopping ~p", [?MODULE]),
     ok.
 
 init(_Transport, Req, []) ->
